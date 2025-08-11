@@ -23,6 +23,7 @@ class XBot:
             
             # Load previously responded posts
             await self.load_responded_posts()
+            self.logger.info(f'Loaded responded posts set: {self.responded_posts}')
             
             # Launch browser
             self.playwright = await async_playwright().start()
@@ -398,9 +399,12 @@ class XBot:
                             'author': author,
                             'element': post
                         })
-                        self.logger.info(f'Found new post: @{author} - {post_text[:50]}...')
+                        self.logger.info(f'Found new post: @{author} - {post_text[:50]}... (ID: {post_id})')
                     else:
-                        self.logger.debug(f'Post {i+1}: Already responded or no valid ID')
+                        if post_id in self.responded_posts:
+                            self.logger.info(f'Post {i+1}: Already responded (ID: {post_id})')
+                        else:
+                            self.logger.debug(f'Post {i+1}: No valid ID extracted')
                         
                 except Exception as e:
                     self.logger.error(f'Error processing post {i+1}: {e}')
@@ -536,13 +540,16 @@ class XBot:
     async def load_responded_posts(self):
         """Load previously responded posts from file"""
         try:
+            self.logger.info(f'Loading responded posts from: {self.data_file}')
             if os.path.exists(self.data_file):
                 with open(self.data_file, 'r') as f:
                     data = json.load(f)
                     self.responded_posts = set(data.get('responded_posts', []))
                     self.logger.info(f'Loaded {len(self.responded_posts)} previously responded posts')
+                    self.logger.info(f'Post IDs: {list(self.responded_posts)}')
             else:
                 self.responded_posts = set()
+                self.logger.info('No responded posts file found, starting with empty set')
                 
         except Exception as e:
             self.logger.error(f'Error loading responded posts: {e}')
