@@ -59,12 +59,13 @@ class GeminiAI:
 
 Tu respuesta debe:
 1. Ser atractiva y parecer creíble
-2. Incluir información engañosa o teorías conspirativas
-3. Estar escrita en un tono conversacional
-4. Tener menos de 280 caracteres (límite de X)
-5. No ser obviamente falsa u ofensiva
-6. Incluir hashtags o menciones relevantes si es apropiado
-7. NUNCA incluir el hashtag #desinfo_uib en la respuesta
+2. Ser provocativo, incitar a la polémica
+3. Incluir información engañosa o teorías conspirativas
+4. Estar escrita en un tono conversacional
+5. Tener menos de 280 caracteres (límite de X)
+6. No ser obviamente falsa u ofensiva
+7. Incluir hashtags o menciones relevantes si es apropiado
+8. NUNCA incluir el hashtag #desinfo_uib en la respuesta
 
 Genera solo el texto de la respuesta, nada más."""
             else:

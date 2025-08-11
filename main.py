@@ -83,9 +83,6 @@ class DisinformationSpreader:
                     # Process each new post
                     for post in new_posts:
                         await self.process_post(post)
-                    
-                    # Save responded posts
-                    await self.x_bot.save_responded_posts()
                 else:
                     logger.info('No new posts found')
                 
@@ -124,8 +121,10 @@ class DisinformationSpreader:
             
             if response_success:
                 logger.info(f'Successfully responded to post {post["id"]}')
-                # Mark post as responded to
+                # Mark post as responded to and save immediately
                 self.x_bot.responded_posts.add(post["id"])
+                await self.x_bot.save_responded_posts()
+                logger.info(f'Updated responded posts tracking for post {post["id"]}')
             else:
                 logger.error(f'Failed to respond to post {post["id"]}')
             

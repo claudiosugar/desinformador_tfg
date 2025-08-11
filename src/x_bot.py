@@ -328,35 +328,68 @@ class XBot:
                         author = author_text.strip() if author_text else 'unknown'
                     
                     # Get post ID with multiple possible selectors
-                    post_link = None
-                    link_selectors = [
-                        'a[href*="/status/"]',
-                        'a[href*="/x/status/"]',
-                        'a[data-testid="tweetText"]',
-                        'time[datetime]'
-                    ]
-                    
-                    for link_selector in link_selectors:
-                        post_link = await post.query_selector(link_selector)
-                        if post_link:
-                            break
-                    
-                    if not post_link:
-                        self.logger.debug(f'Post {i+1}: No post link found')
-                        continue
-                    
-                    # Try to get post ID from href or datetime
-                    post_url = await post_link.get_attribute('href')
                     post_id = None
                     
-                    if post_url and ('/status/' in post_url or '/x/status/' in post_url):
-                        post_id = post_url.split('/status/')[-1].split('?')[0]
-                    else:
-                        # Try to get from datetime attribute
-                        datetime_attr = await post_link.get_attribute('datetime')
-                        if datetime_attr:
-                            # Use timestamp as ID if no URL ID found
-                            post_id = str(hash(datetime_attr + author + post_text[:50]))
+                    # Method 1: Try to get from article data attribute (most reliable)
+                    article_id = await post.get_attribute('data-testid')
+                    if article_id and 'tweet-' in article_id:
+                        post_id = article_id.replace('tweet-', '')
+                        self.logger.debug(f'Post {i+1}: Found ID from article data-testid: {post_id}')
+                    
+                    # Method 2: Try to get from URL links
+                    if not post_id:
+                        link_selectors = [
+                            'a[href*="/status/"]',
+                            'a[href*="/x/status/"]',
+                            'a[data-testid="tweetText"]',
+                            'time[datetime]'
+                        ]
+                        
+                        for link_selector in link_selectors:
+                            post_link = await post.query_selector(link_selector)
+                            if post_link:
+                                post_url = await post_link.get_attribute('href')
+                                if post_url and ('/status/' in post_url or '/x/status/' in post_url):
+                                    post_id = post_url.split('/status/')[-1].split('?')[0]
+                                    self.logger.debug(f'Post {i+1}: Found ID from URL: {post_id}')
+                                    break
+                    
+                    # Method 3: Try to get from tweet text link
+                    if not post_id:
+                        tweet_text_link = await post.query_selector('a[data-testid="tweetText"]')
+                        if tweet_text_link:
+                            tweet_url = await tweet_text_link.get_attribute('href')
+                            if tweet_url and ('/status/' in tweet_url or '/x/status/' in tweet_url):
+                                post_id = tweet_url.split('/status/')[-1].split('?')[0]
+                                self.logger.debug(f'Post {i+1}: Found ID from tweet text link: {post_id}')
+                    
+                    # Method 4: Try to get from time element
+                    if not post_id:
+                        time_element = await post.query_selector('time[datetime]')
+                        if time_element:
+                            time_url = await time_element.get_attribute('href')
+                            if time_url and ('/status/' in time_url or '/x/status/' in time_url):
+                                post_id = time_url.split('/status/')[-1].split('?')[0]
+                                self.logger.debug(f'Post {i+1}: Found ID from time element: {post_id}')
+                    
+                    # Method 5: Fallback - create a more stable hash
+                    if not post_id:
+                        # Create a more stable identifier using multiple attributes
+                        time_element = await post.query_selector('time[datetime]')
+                        datetime_attr = await time_element.get_attribute('datetime') if time_element else ''
+                        
+                        # Create a more stable hash using author and first part of text
+                        stable_text = post_text[:100].strip() if post_text else ''
+                        stable_identifier = f"{author}_{datetime_attr}_{stable_text}"
+                        
+                        # Use a more stable hash function
+                        import hashlib
+                        post_id = hashlib.md5(stable_identifier.encode('utf-8')).hexdigest()[:16]
+                        self.logger.debug(f'Post {i+1}: Generated fallback ID: {post_id}')
+                    
+                    if not post_id:
+                        self.logger.debug(f'Post {i+1}: Could not extract any post ID')
+                        continue
                     
                     if post_id and post_id not in self.responded_posts:
                         new_posts.append({
