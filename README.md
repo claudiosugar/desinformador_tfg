@@ -1,207 +1,207 @@
-# Disinformation Spreader - TFG Project (Python)
+# Difusor de Desinformación - Proyecto TFG (Python)
 
-A Python-based X bot that automatically responds to posts containing the `#desinfo_uib` hashtag with AI-generated disinformation using Google's Gemini AI.
+Un bot de X basado en Python que responde automáticamente a publicaciones que contienen el hashtag `#desinfo_uib` con desinformación generada por IA usando Google Gemini.
 
-## ⚠️ Disclaimer
+## ⚠️ Aviso
 
-This project is created for educational purposes as part of a university thesis (TFG). It demonstrates the potential risks of AI-powered disinformation spread. This tool should only be used in controlled academic environments with proper ethical considerations.
+Este proyecto se ha creado con fines educativos como parte de un Trabajo de Fin de Grado (TFG). Demuestra los riesgos potenciales de la difusión de desinformación impulsada por IA. Esta herramienta debe usarse únicamente en entornos académicos controlados y con las consideraciones éticas adecuadas.
 
-## Features
+## Funcionalidades
 
-- 🤖 **AI-Powered Responses**: Uses Google Gemini AI to generate convincing disinformation responses
-- 📱 **X Automation**: Automated login and interaction using Playwright
-- 🔍 **Hashtag Monitoring**: Continuously monitors `#desinfo_uib` hashtag
-- 💾 **Response Tracking**: Keeps track of responded posts to avoid duplicates
-- 🛡️ **Rate Limiting**: Built-in delays to avoid X detection
-- 📊 **Logging**: Comprehensive logging for monitoring and debugging
-- 🐍 **Python Implementation**: Modern async/await patterns for efficient operation
+- 🤖 **Respuestas con IA**: Utiliza Google Gemini para generar respuestas de desinformación convincentes
+- 📱 **Automatización de X**: Inicio de sesión e interacción automatizados con Playwright
+- 🔍 **Monitorización de hashtag**: Supervisa continuamente el hashtag `#desinfo_uib`
+- 💾 **Seguimiento de respuestas**: Evita duplicados registrando las publicaciones ya respondidas
+- 🛡️ **Limitación de velocidad**: Retrasos incorporados para evitar la detección en X
+- 📊 **Registro (logging)**: Registro detallado para monitorización y depuración
+- 🐍 **Implementación en Python**: Uso de patrones modernos async/await para un funcionamiento eficiente
 
-## Prerequisites
+## Requisitos previos
 
-- Python 3.8 or higher
-- pip (Python package installer)
-- X account with the credentials specified in config.py
+- Python 3.8 o superior
+- pip (gestor de paquetes de Python)
+- Cuenta de X con credenciales configuradas en `config.py`
 
-## Installation
+## Instalación
 
-1. **Clone the repository**
+1. **Clonar el repositorio**
    ```bash
    git clone <repository-url>
    cd desinformador-tfg
    ```
 
-2. **Install Python dependencies**
+2. **Instalar dependencias de Python**
    ```bash
    pip install -r requirements.txt
    ```
 
-3. **Install Playwright browsers**
+3. **Instalar navegadores de Playwright**
    ```bash
    playwright install chromium
    ```
 
-4. **Test the setup**
+4. **Probar la instalación**
    ```bash
    python test_setup.py
    ```
 
-## Configuration
+## Configuración
 
-**Important**: The `config.py` file contains sensitive information and is not tracked by git. Use `config_template.py` as a starting point.
+**Importante**: El archivo `config.py` contiene información sensible y no se rastrea en git. Usa `config_template.py` como punto de partida.
 
-1. **Copy the template**:
+1. **Copiar la plantilla**:
    ```bash
    cp config_template.py config.py
    ```
 
-2. **Edit `config.py`** with your credentials:
+2. **Edita `config.py`** con tus credenciales:
 
 ```python
-# Gemini AI API Key
+# Clave de API de Gemini
 GEMINI_API_KEY = 'your-gemini-api-key'
 
-# X Credentials
+# Credenciales de X
 X_USERNAME = 'your-x-username'
 X_PASSWORD = 'your-x-password'
-X_PHONE_NUMBER = 'your-phone-number'  # For security challenges
+X_PHONE_NUMBER = 'your-phone-number'  # Para desafíos de seguridad
 
-# Hashtag to monitor
+# Hashtag a monitorizar
 TARGET_HASHTAG = '#desinfo_uib'
 
-# Response interval (in seconds)
+# Intervalo de respuesta (en segundos)
 RESPONSE_INTERVAL = 30
 
-# Browser settings
-HEADLESS = False  # Set to True for production
-SLOW_MO = 1000    # Milliseconds to slow down actions
+# Configuración del navegador
+HEADLESS = False  # Pon True para producción
+SLOW_MO = 1000    # Milisegundos para ralentizar acciones
 ```
 
-## Usage
+## Uso
 
-### Start the bot
+### Iniciar el bot
 ```bash
 python main.py
 ```
 
-### Test the setup
+### Probar la configuración
 ```bash
 python test_setup.py
 ```
 
-### Stop the bot
-Press `Ctrl+C` to gracefully stop the bot.
+### Detener el bot
+Pulsa `Ctrl+C` para detener el bot de forma segura.
 
-## How It Works
+## Cómo funciona
 
-1. **Initialization**: The bot launches a browser and logs into X
-2. **Monitoring**: Continuously searches for posts with `#desinfo_uib`
-3. **Analysis**: Identifies new posts that haven't been responded to
-4. **AI Generation**: Uses Gemini AI to create disinformation responses
-5. **Response**: Automatically replies to posts with generated content
-6. **Tracking**: Saves responded post IDs to avoid duplicates
+1. **Inicialización**: El bot lanza un navegador e inicia sesión en X
+2. **Monitorización**: Busca continuamente publicaciones con `#desinfo_uib`
+3. **Análisis**: Identifica nuevas publicaciones no respondidas
+4. **Generación con IA**: Usa Gemini para crear respuestas de desinformación
+5. **Respuesta**: Responde automáticamente con el contenido generado
+6. **Seguimiento**: Guarda los IDs de las publicaciones respondidas para evitar duplicados
 
-## Project Structure
+## Estructura del proyecto
 
 ```
 desinformador-tfg/
 ├── src/
-│   ├── __init__.py        # Package initialization
-│   ├── gemini_ai.py       # Gemini AI integration
-│   └── x_bot.py          # X automation logic
-├── main.py               # Main application entry point
-├── config.py            # Configuration settings
-├── requirements.txt     # Python dependencies
-├── test_setup.py       # Setup verification script
-└── README.md           # This file
+│   ├── __init__.py        # Inicialización del paquete
+│   ├── gemini_ai.py       # Integración con Gemini AI
+│   └── x_bot.py          # Lógica de automatización de X
+├── main.py               # Punto de entrada de la aplicación
+├── config.py            # Configuración
+├── requirements.txt     # Dependencias de Python
+├── test_setup.py       # Script de verificación de la instalación
+└── README.md           # Este archivo
 ```
 
-## Dependencies
+## Dependencias
 
-- **playwright**: Browser automation for X interaction
-- **google-generativeai**: Google Gemini AI API integration
-- **python-dotenv**: Environment variable management
-- **requests**: HTTP requests for API calls
-- **beautifulsoup4**: HTML parsing
-- **selenium**: Alternative browser automation (backup)
+- **playwright**: Automatización de navegador para interactuar con X
+- **google-generativeai**: Integración con la API de Google Gemini
+- **python-dotenv**: Gestión de variables de entorno
+- **requests**: Solicitudes HTTP para llamadas a API
+- **beautifulsoup4**: Análisis de HTML
+- **selenium**: Automatización de navegador alternativa (respaldo)
 
-## Safety Features
+## Medidas de seguridad
 
-- **Rate Limiting**: Built-in delays between actions
-- **Duplicate Prevention**: Tracks responded posts
-- **Error Handling**: Graceful error recovery
-- **Graceful Shutdown**: Proper cleanup on exit
-- **User Agent Spoofing**: Avoids basic bot detection
-- **Async Operations**: Efficient non-blocking operations
+- **Limitación de velocidad**: Retrasos entre acciones
+- **Prevención de duplicados**: Registro de publicaciones respondidas
+- **Manejo de errores**: Recuperación ante fallos
+- **Apagado controlado**: Limpieza adecuada al salir
+- **Suplantación de agente de usuario**: Evita detección básica de bots
+- **Operaciones asíncronas**: Ejecución eficiente no bloqueante
 
-## Ethical Considerations
+## Consideraciones éticas
 
-This project demonstrates:
-- The potential for AI-powered disinformation
-- The importance of media literacy
-- The need for responsible AI development
-- The risks of automated social media manipulation
+Este proyecto demuestra:
+- El potencial de la desinformación impulsada por IA
+- La importancia de la alfabetización mediática
+- La necesidad de un desarrollo responsable de IA
+- Los riesgos de la automatización en redes sociales
 
-## Troubleshooting
+## Resolución de problemas
 
-### Common Issues
+### Problemas comunes
 
-1. **Login Failed**
-   - Verify X credentials in config.py
-   - Check if 2FA is enabled (not supported)
-   - Ensure account is not locked
+1. **Fallo al iniciar sesión**
+   - Verifica las credenciales de X en `config.py`
+   - Comprueba si tienes 2FA activado (no compatible)
+   - Asegúrate de que la cuenta no esté bloqueada
 
-2. **AI Response Generation Failed**
-   - Verify Gemini API key is valid
-   - Check internet connection
-   - Review API usage limits
+2. **Fallo al generar respuestas con IA**
+   - Verifica que la clave de la API de Gemini sea válida
+   - Comprueba la conexión a internet
+   - Revisa los límites de uso de la API
 
-3. **Browser Issues**
-   - Ensure Playwright is installed: `playwright install chromium`
-   - Try running in headless mode by changing `HEADLESS = True` in config.py
+3. **Problemas con el navegador**
+   - Asegúrate de haber instalado Playwright: `playwright install chromium`
+   - Prueba a ejecutar en modo headless cambiando `HEADLESS = True` en `config.py`
 
-4. **Python Version Issues**
-   - Ensure Python 3.8+ is installed
-   - Check with: `python --version`
+4. **Problemas con la versión de Python**
+   - Asegúrate de tener Python 3.8+
+   - Compruébalo con: `python --version`
 
-### Debug Mode
+### Modo de depuración
 
-To enable detailed logging, the application automatically logs to both console and file (`disinformation_spreader.log`).
+La aplicación registra automáticamente tanto en consola como en archivo (`disinformation_spreader.log`).
 
-For additional debugging, modify the browser launch options in `src/x_bot.py`:
+Para depurar adicionalmente, modifica las opciones de lanzamiento del navegador en `src/x_bot.py`:
 
 ```python
 self.browser = await self.playwright.chromium.launch(
     headless=False,
     slow_mo=1000,
-    devtools=True  # Opens developer tools
+    devtools=True  # Abre las herramientas de desarrollador
 )
 ```
 
-## Development
+## Desarrollo
 
-### Running Tests
+### Ejecutar tests
 ```bash
 python test_setup.py
 ```
 
-### Code Structure
-- **Async/Await**: Modern Python async patterns for efficient operation
-- **Error Handling**: Comprehensive try/catch blocks
-- **Logging**: Structured logging with different levels
-- **Configuration**: Centralized configuration management
+### Estructura del código
+- **Async/Await**: Patrones asíncronos modernos de Python para un funcionamiento eficiente
+- **Manejo de errores**: Bloques try/except con registro estructurado
+- **Logging**: Registro estructurado con distintos niveles
+- **Configuración**: Gestión centralizada de configuración
 
-## Contributing
+## Contribución
 
-This is an academic project. For educational purposes only.
+Este es un proyecto académico. Solo para fines educativos.
 
-## License
+## Licencia
 
-MIT License - Educational use only.
+Licencia MIT - Uso educativo únicamente.
 
-## Support
+## Soporte
 
-For academic support, contact your thesis supervisor.
+Para soporte académico, contacta con tu tutor de TFG.
 
-## Logs
+## Registros (logs)
 
-The application creates detailed logs in `disinformation_spreader.log` for debugging and monitoring purposes.
+La aplicación crea registros detallados en `disinformation_spreader.log` para depuración y monitorización.
