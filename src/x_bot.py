@@ -104,9 +104,6 @@ class XBot:
                 await self.page.keyboard.press('Enter')
                 self.logger.info('Submitted username via Enter key fallback')
 
-            # Check for security challenge after username (before password)
-            security_challenge_handled = await self.handle_security_challenge()
-
             try:
                 await self.page.wait_for_selector('input[name="password"]', timeout=30000)
             except Exception:
@@ -215,43 +212,6 @@ class XBot:
             
         except Exception as e:
             self.logger.error(f'Error logging into X: {e}')
-            return False
-    
-    async def handle_security_challenge(self):
-        """Handle security challenge that can appear after username entry"""
-        try:
-            # Wait a moment for security challenge to appear
-            await asyncio.sleep(3)
-            
-            # Look for the specific security challenge input field
-            security_input = await self.page.query_selector('input[data-testid="ocfEnterTextTextInput"]')
-            if security_input:
-                self.logger.info('Security challenge detected - entering phone number...')
-                
-                # Enter the provided phone number
-                await security_input.fill(config.X_PHONE_NUMBER)
-                await asyncio.sleep(1)
-                
-                # Look for and click the continue/verify button
-                continue_button = await self.page.query_selector('[data-testid="ocfEnterTextNextButton"]')
-                if continue_button:
-                    await continue_button.click()
-                    self.logger.info('Phone number submitted for verification')
-                    await asyncio.sleep(5)
-                    return True
-                else:
-                    # Try alternative button selectors
-                    alt_buttons = await self.page.query_selector_all('text="Continue", text="Verify", text="Next"')
-                    if alt_buttons:
-                        await alt_buttons[0].click()
-                        self.logger.info('Phone number submitted for verification (alternative button)')
-                        await asyncio.sleep(5)
-                        return True
-            
-            return False
-            
-        except Exception as e:
-            self.logger.error(f'Error handling security challenge: {e}')
             return False
     
     async def search_hashtag(self):
