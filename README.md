@@ -237,6 +237,15 @@ python test_setup.py
 
 Este es un proyecto académico. Solo para fines educativos.
 
+## Asistencia con IA
+
+Partes de la implementación (conexión por CDP para evitar la detección
+anti-bot de X, búsqueda en la pestaña "Top" + filtrado por contenido del
+hashtag, auto-lanzamiento de Chrome y actualizaciones de modelo de
+Gemini) fueron desarrolladas con la asistencia de Claude (Anthropic).
+Toda la lógica de la herramienta y las decisiones de diseño son
+responsabilidad del autor del TFG.
+
 ## Licencia
 
 Licencia MIT - Uso educativo únicamente.
