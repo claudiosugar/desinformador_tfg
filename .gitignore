@@ -137,6 +137,11 @@ data/
 # Configuration files with sensitive data
 config.py
 
+# Browser profiles + debug dumps
+browser_profile/
+chrome_profile/
+debug/
+
 # Playwright
 test-results/
 playwright-report/

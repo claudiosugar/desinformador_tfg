@@ -25,19 +25,34 @@ class XBot:
             await self.load_responded_posts()
             self.logger.info(f'Loaded responded posts set: {self.responded_posts}')
             
-            # Launch browser
             self.playwright = await async_playwright().start()
-            self.browser = await self.playwright.chromium.launch(
-                headless=config.HEADLESS,
-                slow_mo=config.SLOW_MO
-            )
-            
-            self.page = await self.browser.new_page()
-            
-            # Set user agent to avoid detection
-            await self.page.set_extra_http_headers({
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-            })
+
+            cdp_url = getattr(config, 'CHROME_CDP_URL', None)
+            if cdp_url:
+                # Connect to an already-running Chrome that the user launched manually.
+                # This lets the bot inherit a real, logged-in session and avoid X's
+                # automation fingerprinting entirely.
+                self.logger.info(f'Connecting to existing Chrome over CDP: {cdp_url}')
+                self.browser = await self.playwright.chromium.connect_over_cdp(cdp_url)
+                self.context = self.browser.contexts[0] if self.browser.contexts else await self.browser.new_context()
+                self.page = self.context.pages[0] if self.context.pages else await self.context.new_page()
+            else:
+                # Fallback: Playwright-launched persistent profile (may be detected by X).
+                profile_dir = os.path.abspath('./browser_profile')
+                os.makedirs(profile_dir, exist_ok=True)
+                self.context = await self.playwright.chromium.launch_persistent_context(
+                    user_data_dir=profile_dir,
+                    channel='chrome',
+                    headless=config.HEADLESS,
+                    viewport={'width': 1280, 'height': 800},
+                    user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+                    args=['--disable-blink-features=AutomationControlled'],
+                )
+                self.browser = self.context.browser
+                await self.context.add_init_script(
+                    "Object.defineProperty(navigator, 'webdriver', {get: () => undefined});"
+                )
+                self.page = self.context.pages[0] if self.context.pages else await self.context.new_page()
             
             self.logger.info('X bot initialized successfully')
             return True
@@ -50,22 +65,69 @@ class XBot:
         """Login to X with provided credentials"""
         try:
             self.logger.info('Logging into X...')
-            
-            # Navigate to X login
-            await self.page.goto('https://twitter.com/login')
-            
-            # Wait for login form and enter username
-            await self.page.wait_for_selector('input[autocomplete="username"]')
-            await self.page.fill('input[autocomplete="username"]', config.X_USERNAME)
-            await self.page.click('text=Next')
-            
+
+            # If the persistent profile already has a valid session, skip the form.
+            await self.page.goto('https://x.com/home', wait_until='domcontentloaded')
+            await asyncio.sleep(3)
+            if 'login' not in self.page.url and 'flow' not in self.page.url:
+                home = await self.page.query_selector('[data-testid="primaryColumn"], a[href="/home"], a[data-testid="AppTabBar_Home_Link"]')
+                if home:
+                    self.logger.info(f'Already authenticated (url={self.page.url}); skipping login form')
+                    return True
+
+            await self.page.goto('https://x.com/i/flow/login', wait_until='domcontentloaded')
+
+            await self._dismiss_cookie_banner()
+
+            try:
+                await self.page.wait_for_selector('input[autocomplete="username"], input[name="text"]', timeout=60000)
+            except Exception as e:
+                await self._dump_page('login_username_timeout')
+                raise
+
+            username_input = await self.page.query_selector('input[autocomplete="username"]') \
+                or await self.page.query_selector('input[name="text"]')
+            await username_input.click()
+            await asyncio.sleep(0.5)
+            await self.page.keyboard.type(config.X_USERNAME, delay=50)
+            await asyncio.sleep(1)
+
+            clicked = False
+            for selector in ['button:has-text("Next")', 'div[role="button"]:has-text("Next")', 'button:has-text("Siguiente")', 'div[role="button"]:has-text("Siguiente")']:
+                btn = await self.page.query_selector(selector)
+                if btn:
+                    await btn.click()
+                    clicked = True
+                    self.logger.info(f'Clicked next button: {selector}')
+                    break
+            if not clicked:
+                await self.page.keyboard.press('Enter')
+                self.logger.info('Submitted username via Enter key fallback')
+
             # Check for security challenge after username (before password)
             security_challenge_handled = await self.handle_security_challenge()
-            
-            # Wait and enter password
-            await self.page.wait_for_selector('input[name="password"]')
-            await self.page.fill('input[name="password"]', config.X_PASSWORD)
-            await self.page.click('text=Log in')
+
+            try:
+                await self.page.wait_for_selector('input[name="password"]', timeout=30000)
+            except Exception:
+                await self._dump_page('login_password_timeout')
+                raise
+            password_input = await self.page.query_selector('input[name="password"]')
+            await password_input.click()
+            await asyncio.sleep(0.5)
+            await self.page.keyboard.type(config.X_PASSWORD, delay=50)
+            await asyncio.sleep(1)
+            clicked = False
+            for selector in ['button[data-testid="LoginForm_Login_Button"]', 'button:has-text("Log in")', 'div[role="button"]:has-text("Log in")', 'button:has-text("Iniciar sesión")', 'div[role="button"]:has-text("Iniciar sesión")']:
+                btn = await self.page.query_selector(selector)
+                if btn:
+                    await btn.click()
+                    clicked = True
+                    self.logger.info(f'Clicked login button: {selector}')
+                    break
+            if not clicked:
+                await self.page.keyboard.press('Enter')
+                self.logger.info('Submitted password via Enter key fallback')
             
             # Wait for login to complete with multiple success indicators
             login_successful = False
@@ -212,7 +274,7 @@ class XBot:
             else:
                 self.logger.warning('Search input not found, trying direct URL...')
                 # Fallback: try direct URL
-                search_url = f'https://twitter.com/search?q={config.TARGET_HASHTAG}&src=typed_query&f=live'
+                search_url = f'https://x.com/search?q={config.TARGET_HASHTAG}&src=typed_query'
                 await self.page.goto(search_url)
                 await asyncio.sleep(3)
             
@@ -299,6 +361,12 @@ class XBot:
                     post_text = await text_element.text_content()
                     if not post_text or len(post_text.strip()) < 5:
                         self.logger.debug(f'Post {i+1}: Text too short or empty')
+                        continue
+
+                    # Safety: only act on posts that actually contain the target hashtag.
+                    # Top-tab search can include unrelated trending posts.
+                    if config.TARGET_HASHTAG.lower() not in post_text.lower():
+                        self.logger.info(f'Post {i+1}: skipped (does not contain {config.TARGET_HASHTAG})')
                         continue
                     
                     # Get author username with multiple possible selectors
@@ -571,14 +639,50 @@ class XBot:
         except Exception as e:
             self.logger.error(f'Error saving responded posts: {e}')
     
+    async def _dismiss_cookie_banner(self):
+        """Try to dismiss X's cookie consent banner if present."""
+        try:
+            await asyncio.sleep(1)
+            for selector in [
+                'button:has-text("Refuse non-essential cookies")',
+                'button:has-text("Rechazar las cookies no esenciales")',
+                'button:has-text("Accept all cookies")',
+                'button:has-text("Aceptar todas las cookies")',
+            ]:
+                btn = await self.page.query_selector(selector)
+                if btn:
+                    await btn.click()
+                    self.logger.info(f'Dismissed cookie banner via: {selector}')
+                    await asyncio.sleep(1)
+                    return
+        except Exception as e:
+            self.logger.warning(f'Cookie banner dismissal skipped: {e}')
+
+    async def _dump_page(self, tag):
+        """Dump screenshot + HTML for post-mortem debugging."""
+        try:
+            os.makedirs('./debug', exist_ok=True)
+            ts = time.strftime('%Y%m%d_%H%M%S')
+            shot = f'./debug/{tag}_{ts}.png'
+            html = f'./debug/{tag}_{ts}.html'
+            await self.page.screenshot(path=shot, full_page=True)
+            content = await self.page.content()
+            with open(html, 'w', encoding='utf-8') as f:
+                f.write(content)
+            self.logger.error(f'Saved debug dump: {shot} / {html} (url={self.page.url})')
+        except Exception as e:
+            self.logger.error(f'Failed to dump debug page: {e}')
+
     async def close(self):
         """Close browser and cleanup resources"""
         try:
-            if self.browser:
+            if hasattr(self, 'context') and self.context:
+                await self.context.close()
+            elif self.browser:
                 await self.browser.close()
             if hasattr(self, 'playwright'):
                 await self.playwright.stop()
             self.logger.info('X bot closed')
-            
+
         except Exception as e:
             self.logger.error(f'Error closing X bot: {e}')

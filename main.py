@@ -38,6 +38,12 @@ class DisinformationSpreader:
             logger.info(f'Monitoring hashtag: {config.TARGET_HASHTAG}')
             logger.info('Using Gemini AI for responses')
             
+            # Log experiment mode
+            experiment_mode = getattr(config, 'EXPERIMENT_MODE', 'default')
+            logger.info(f'🧪 Experiment Mode: {experiment_mode}')
+            if hasattr(config, 'LOG_EXPERIMENT_DATA') and config.LOG_EXPERIMENT_DATA:
+                logger.info(f'📊 Experiment logging enabled: {config.EXPERIMENT_LOG_FILE}')
+            
             # Initialize X bot
             initialized = await self.x_bot.initialize()
             if not initialized:
@@ -104,7 +110,8 @@ class DisinformationSpreader:
             # Generate disinformation response using Gemini AI
             response = self.gemini_ai.generate_disinformation_response(
                 post["text"], 
-                post["author"]
+                post["author"],
+                post["id"]  # Pass tweet_id for experiment logging
             )
             
             if not response:
