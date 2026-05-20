@@ -6,8 +6,14 @@ Main application entry point
 
 import asyncio
 import logging
+import os
 import signal
+import subprocess
 import sys
+import time
+from urllib.parse import urlparse
+from urllib.request import urlopen
+from urllib.error import URLError
 from src.x_bot import XBot
 from src.gemini_ai import GeminiAI
 import config
@@ -171,11 +177,75 @@ def setup_signal_handlers():
     signal.signal(signal.SIGINT, lambda s, f: asyncio.create_task(signal_handler(s, f)))
     signal.signal(signal.SIGTERM, lambda s, f: asyncio.create_task(signal_handler(s, f)))
 
+def _cdp_alive(cdp_url):
+    try:
+        with urlopen(cdp_url.rstrip('/') + '/json/version', timeout=2):
+            return True
+    except (URLError, OSError):
+        return False
+
+
+def _find_chrome():
+    candidates = [
+        r'C:\Program Files\Google\Chrome\Application\chrome.exe',
+        r'C:\Program Files (x86)\Google\Chrome\Application\chrome.exe',
+        '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+        '/usr/bin/google-chrome',
+        '/usr/bin/chromium-browser',
+        '/usr/bin/chromium',
+    ]
+    for path in candidates:
+        if os.path.exists(path):
+            return path
+    return None
+
+
+def ensure_chrome_running():
+    """If CHROME_CDP_URL is set and not already responding, launch Chrome
+    with the debug port + dedicated profile and wait for CDP to come up."""
+    cdp_url = getattr(config, 'CHROME_CDP_URL', None)
+    if not cdp_url:
+        return
+
+    if _cdp_alive(cdp_url):
+        logger.info(f'Chrome CDP already running at {cdp_url}')
+        return
+
+    chrome = _find_chrome()
+    if not chrome:
+        logger.warning('Chrome executable not found; the bot will likely fail to attach. '
+                       'Launch Chrome manually with --remote-debugging-port and try again.')
+        return
+
+    port = urlparse(cdp_url).port or 9222
+    profile = os.path.abspath('./chrome_profile')
+    os.makedirs(profile, exist_ok=True)
+    logger.info(f'Launching Chrome ({chrome}) on port {port} with profile {profile}')
+
+    args = [chrome, f'--remote-debugging-port={port}', f'--user-data-dir={profile}', 'https://x.com/home']
+    kwargs = {'stdout': subprocess.DEVNULL, 'stderr': subprocess.DEVNULL}
+    if sys.platform == 'win32':
+        # Detach so Chrome survives if this script exits unexpectedly
+        kwargs['creationflags'] = 0x00000008  # DETACHED_PROCESS
+    else:
+        kwargs['start_new_session'] = True
+    subprocess.Popen(args, **kwargs)
+
+    # Wait up to 20s for CDP to come up
+    for _ in range(40):
+        if _cdp_alive(cdp_url):
+            logger.info('Chrome CDP is now responsive')
+            return
+        time.sleep(0.5)
+    logger.error('Chrome did not expose CDP within 20s')
+
+
 async def main():
     """Main application entry point"""
     global spreader
-    
+
     try:
+        ensure_chrome_running()
         setup_signal_handlers()
         spreader = DisinformationSpreader()
         await spreader.start()
