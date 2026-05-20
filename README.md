@@ -63,7 +63,6 @@ GEMINI_API_KEY = 'your-gemini-api-key'
 # Credenciales de X
 X_USERNAME = 'your-x-username'
 X_PASSWORD = 'your-x-password'
-X_PHONE_NUMBER = 'your-phone-number'  # Para desafíos de seguridad
 
 # Hashtag a monitorizar
 TARGET_HASHTAG = '#desinfo_uib'
@@ -74,14 +73,46 @@ RESPONSE_INTERVAL = 30
 # Configuración del navegador
 HEADLESS = False  # Pon True para producción
 SLOW_MO = 1000    # Milisegundos para ralentizar acciones
+
+# Conectar a un Chrome que tú mismo hayas lanzado con depuración remota
+# activada. Déjalo así para usar el puerto por defecto; ponlo a None para
+# que el bot lance su propio Chromium (menos fiable - el anti-bot de X
+# puede bloquear el inicio de sesión).
+CHROME_CDP_URL = 'http://localhost:9222'
 ```
 
 ## Uso
 
-### Iniciar el bot
+X detecta el Chromium lanzado por Playwright y bloquea silenciosamente el
+formulario de inicio de sesión. El bot lo soluciona conectándose por CDP a
+una instancia de Chrome que tú mismo lanzas, así hereda tu sesión real ya
+iniciada.
+
+### 1. Lanzar Chrome con depuración remota
+
+Windows:
+```powershell
+"C:\Program Files\Google\Chrome\Application\chrome.exe" `
+  --remote-debugging-port=9222 `
+  --user-data-dir="<repo>\chrome_profile"
+```
+
+macOS / Linux: equivalente `chrome --remote-debugging-port=9222
+--user-data-dir=./chrome_profile`.
+
+### 2. Iniciar sesión en X manualmente en esa ventana de Chrome
+
+Ve a https://x.com/i/flow/login e inicia sesión. Resuelve cualquier
+captcha o desafío de teléfono a mano. Las cookies de sesión se guardan en
+`chrome_profile/` así que solo tendrás que hacerlo una vez.
+
+### 3. Iniciar el bot
 ```bash
 python main.py
 ```
+
+El bot se conectará a tu Chrome por CDP, detectará la sesión existente y
+empezará a monitorizar el hashtag.
 
 ### Probar la configuración
 ```bash
@@ -93,12 +124,20 @@ Pulsa `Ctrl+C` para detener el bot de forma segura.
 
 ## Cómo funciona
 
-1. **Inicialización**: El bot lanza un navegador e inicia sesión en X
-2. **Monitorización**: Busca continuamente publicaciones con `#desinfo_uib`
-3. **Análisis**: Identifica nuevas publicaciones no respondidas
-4. **Generación con IA**: Usa Gemini para crear respuestas de desinformación
-5. **Respuesta**: Responde automáticamente con el contenido generado
-6. **Seguimiento**: Guarda los IDs de las publicaciones respondidas para evitar duplicados
+1. **Conectar con Chrome**: Se conecta por CDP (puerto 9222) al Chrome que
+   has lanzado tú. Salta el formulario de login si detecta una sesión
+   activa.
+2. **Monitorización**: Busca el hashtag objetivo mediante el cuadro de
+   búsqueda interno (pestaña "Top" por defecto, donde aparecen las
+   publicaciones de cuentas nuevas).
+3. **Filtrado**: Descarta publicaciones cuyo texto no contenga el hashtag
+   objetivo, para evitar responder a contenido viral no relacionado.
+4. **Generación con IA**: Usa Gemini (`gemini-2.5-flash`) para crear una
+   respuesta de desinformación en el idioma de la publicación.
+5. **Respuesta**: Responde a cada publicación que pase el filtro mediante
+   la UI de respuesta de X.
+6. **Seguimiento**: Guarda los IDs de publicaciones respondidas para
+   evitar duplicados.
 
 ## Estructura del proyecto
 
@@ -145,10 +184,14 @@ Este proyecto demuestra:
 
 ### Problemas comunes
 
-1. **Fallo al iniciar sesión**
-   - Verifica las credenciales de X en `config.py`
-   - Comprueba si tienes 2FA activado (no compatible)
-   - Asegúrate de que la cuenta no esté bloqueada
+1. **Inicio de sesión / "sesión no encontrada"**
+   - Asegúrate de haber lanzado Chrome con `--remote-debugging-port=9222`
+     antes de ejecutar `main.py`
+   - Confirma que http://localhost:9222/json/version responde
+   - Inicia sesión en X una vez a mano en esa ventana de Chrome; las
+     cookies persisten en `chrome_profile/`
+   - NO uses tu perfil de Chrome habitual; el bot espera un
+     `--user-data-dir` dedicado
 
 2. **Fallo al generar respuestas con IA**
    - Verifica que la clave de la API de Gemini sea válida
