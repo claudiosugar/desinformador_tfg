@@ -11,8 +11,11 @@ X_PASSWORD = 'your_x_password_here'
 # Hashtag to monitor
 TARGET_HASHTAG = '#desinfo_uib'
 
-# Response interval (in seconds)
-RESPONSE_INTERVAL = 180
+# Response interval (in seconds). Each loop sleeps a random duration between
+# RESPONSE_INTERVAL and RESPONSE_INTERVAL_MAX to avoid the periodic-cadence
+# signal that X uses to flag bots.
+RESPONSE_INTERVAL = 180      # 3 min (lower bound)
+RESPONSE_INTERVAL_MAX = 300  # 5 min (upper bound)
 
 # Data file to store responded posts
 RESPONDED_POSTS_FILE = './data/responded_posts.json'

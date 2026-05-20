@@ -7,6 +7,7 @@ Main application entry point
 import asyncio
 import logging
 import os
+import random
 import signal
 import subprocess
 import sys
@@ -17,6 +18,16 @@ from urllib.error import URLError
 from src.x_bot import XBot
 from src.gemini_ai import GeminiAI
 import config
+
+
+def _next_interval():
+    """Random sleep in seconds between RESPONSE_INTERVAL and RESPONSE_INTERVAL_MAX.
+    Falls back to RESPONSE_INTERVAL when no jitter is configured."""
+    lo = config.RESPONSE_INTERVAL
+    hi = getattr(config, 'RESPONSE_INTERVAL_MAX', lo)
+    if hi <= lo:
+        return lo
+    return random.randint(lo, hi)
 
 # Configure logging
 logging.basicConfig(
@@ -82,29 +93,32 @@ class DisinformationSpreader:
                 # Search for the hashtag
                 search_success = await self.x_bot.search_hashtag()
                 if not search_success:
-                    logger.warning('Failed to search hashtag, retrying...')
-                    await asyncio.sleep(config.RESPONSE_INTERVAL)
+                    wait = _next_interval()
+                    logger.warning(f'Failed to search hashtag, retrying in {wait}s...')
+                    await asyncio.sleep(wait)
                     continue
-                
+
                 # Get new posts
                 new_posts = await self.x_bot.get_new_posts()
-                
+
                 if new_posts:
                     logger.info(f'Found {len(new_posts)} new posts to respond to')
-                    
+
                     # Process each new post
                     for post in new_posts:
                         await self.process_post(post)
                 else:
                     logger.info('No new posts found')
-                
+
                 # Wait before next check
-                logger.info(f'Waiting {config.RESPONSE_INTERVAL} seconds before next check...')
-                await asyncio.sleep(config.RESPONSE_INTERVAL)
-                
+                wait = _next_interval()
+                logger.info(f'Waiting {wait} seconds before next check...')
+                await asyncio.sleep(wait)
+
             except Exception as e:
-                logger.error(f'Error in monitoring loop: {e}')
-                await asyncio.sleep(config.RESPONSE_INTERVAL)
+                wait = _next_interval()
+                logger.error(f'Error in monitoring loop: {e} (sleeping {wait}s)')
+                await asyncio.sleep(wait)
     
     async def process_post(self, post):
         """Process a single post and generate a response"""
