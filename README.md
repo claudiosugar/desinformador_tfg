@@ -6,10 +6,6 @@ Un bot de X basado en Python que responde automáticamente a publicaciones que c
 
 Este proyecto se ha creado con fines educativos como parte de un Trabajo de Fin de Grado (TFG). Demuestra los riesgos potenciales de la difusión de desinformación impulsada por IA. Esta herramienta debe usarse únicamente en entornos académicos controlados y con las consideraciones éticas adecuadas.
 
-![Demostración del bot: búsqueda del hashtag y respuesta automática](assets/demo.gif)
-
-*El bot busca el hashtag `#desinfo_uib`, detecta una publicación y genera y publica automáticamente una respuesta con desinformación.*
-
 ## Funcionalidades
 
 - 🤖 **Respuestas con IA**: Utiliza Google Gemini para generar respuestas de desinformación convincentes
@@ -19,6 +15,12 @@ Este proyecto se ha creado con fines educativos como parte de un Trabajo de Fin 
 - 🛡️ **Limitación de velocidad**: Retrasos incorporados para evitar la detección en X
 - 📊 **Registro (logging)**: Registro detallado para monitorización y depuración
 - 🐍 **Implementación en Python**: Uso de patrones modernos async/await para un funcionamiento eficiente
+
+## Ejemplo de funcionamiento
+
+<img src="assets/demo.gif" alt="Demostración del bot: búsqueda del hashtag y respuesta automática" width="500">
+
+*El bot busca el hashtag `#desinfo_uib`, detecta una publicación y genera y publica automáticamente una respuesta con desinformación.*
 
 ## Requisitos previos
 
