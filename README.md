@@ -2,6 +2,10 @@
 
 Un bot de X basado en Python que responde automáticamente a publicaciones que contienen el hashtag `#desinfo_uib` con desinformación generada por IA usando Google Gemini.
 
+![Demostración del bot: búsqueda del hashtag y respuesta automática](assets/demo.gif)
+
+*El bot busca el hashtag `#desinfo_uib`, detecta una publicación y genera y publica automáticamente una respuesta con desinformación.*
+
 ## ⚠️ Aviso
 
 Este proyecto se ha creado con fines educativos como parte de un Trabajo de Fin de Grado (TFG). Demuestra los riesgos potenciales de la difusión de desinformación impulsada por IA. Esta herramienta debe usarse únicamente en entornos académicos controlados y con las consideraciones éticas adecuadas.
