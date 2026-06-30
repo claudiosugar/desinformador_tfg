@@ -29,13 +29,20 @@ def _next_interval():
         return lo
     return random.randint(lo, hi)
 
+# Force UTF-8 on the console stream so emojis/accents don't crash logging on
+# Windows consoles using the legacy cp1252 codepage (Python 3.7+).
+try:
+    sys.stdout.reconfigure(encoding='utf-8')
+except (AttributeError, ValueError):
+    pass
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(sys.stdout),
-        logging.FileHandler('disinformation_spreader.log')
+        logging.FileHandler('disinformation_spreader.log', encoding='utf-8')
     ]
 )
 
