@@ -46,11 +46,6 @@ Este proyecto se ha creado con fines educativos como parte de un Trabajo de Fin 
    playwright install chromium
    ```
 
-4. **Probar la instalación**
-   ```bash
-   python test_setup.py
-   ```
-
 ## Configuración
 
 **Importante**: El archivo `config.py` contiene información sensible y no se rastrea en git. Usa `config_template.py` como punto de partida.
@@ -120,11 +115,6 @@ python main.py
 El bot se conectará a tu Chrome por CDP, detectará la sesión existente y
 empezará a monitorizar el hashtag.
 
-### Probar la configuración
-```bash
-python test_setup.py
-```
-
 ### Detener el bot
 Pulsa `Ctrl+C` para detener el bot de forma segura.
 
@@ -156,7 +146,6 @@ desinformador-tfg/
 ├── main.py               # Punto de entrada de la aplicación
 ├── config.py            # Configuración
 ├── requirements.txt     # Dependencias de Python
-├── test_setup.py       # Script de verificación de la instalación
 └── README.md           # Este archivo
 ```
 
@@ -227,11 +216,6 @@ self.browser = await self.playwright.chromium.launch(
 ```
 
 ## Desarrollo
-
-### Ejecutar tests
-```bash
-python test_setup.py
-```
 
 ### Estructura del código
 - **Async/Await**: Patrones asíncronos modernos de Python para un funcionamiento eficiente
